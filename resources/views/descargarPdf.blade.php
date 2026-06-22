@@ -67,14 +67,7 @@
         </div>
         <div class="titulo">
             Comprobante de Pago <br>
-            @php
-                function chilePesos($value)
-                {
-                    return '$ ' . number_format($value, 0);
-                }
-                setlocale(LC_MONETARY, 'es_CL');
-                echo chilePesos($buscarComprobante->amountPayment) . "\n";
-            @endphp
+            {{ chilePesos($buscarComprobante->amountPayment) }}
         </div>
         <div class="table">
             <table>

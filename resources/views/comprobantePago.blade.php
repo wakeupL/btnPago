@@ -45,15 +45,7 @@
                         <tr>
                             <th class="border">Monto pagado</th>
                             <td class="text-center border">
-                               
-                                @php
-                function chilePesos($value)
-                {
-                    return '$ ' . number_format($value, 0);
-                }
-                setlocale(LC_MONETARY, 'es_CL');
-                echo chilePesos($buscarComprobante->amountPayment) . "\n";
-            @endphp
+                                {{ chilePesos($buscarComprobante->amountPayment) }}
                             </td>
                         </tr>
                         <tr>
