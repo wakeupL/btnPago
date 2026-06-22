@@ -22,9 +22,6 @@
                     <x-nav-link :href="route('btn-pagados')" :active="request()->routeIs('btn-pagados')">
                         {{ __('Botón Pagado') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('listado-rechazo')" :active="request()->routeIs('listado-rechazo')">
-                        {{ __('Rechazados') }}
-                    </x-nav-link>
 
                 </div>
             </div>
@@ -98,9 +95,6 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('btn-pagados')" :active="request()->routeIs('btn-pagados')">
                 {{ __('Botón Pagado') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('listado-rechazo')" :active="request()->routeIs('listado-rechazo')">
-                {{ __('Rechazados') }}
             </x-responsive-nav-link>
 
         </div>

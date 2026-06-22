@@ -31,8 +31,9 @@ El operador genera el botón desde el panel, el cliente paga desde su dispositiv
 
 - **Generación de botones de pago** con monto y número de documento
 - **URL corta única** para compartir con el cliente (8 caracteres, índice UNIQUE en BD, protegida contra reutilización)
-- **Dashboard con KPIs** en tiempo real: activos, pagados, rechazados, monto recaudado, actividad diaria
-- **Listados con búsqueda en vivo** (Livewire): botones activos, pagados y rechazados
+- **Dashboard con KPIs** en tiempo real: activos, pagados, monto recaudado, actividad diaria
+- **Listados con búsqueda en vivo** (Livewire): botones activos y pagados
+- **Número de documento único**: índice UNIQUE en BD + validación al generar, evita comprobantes cruzados
 - **Comprobante de pago** rediseñado con soporte dark mode completo
 - **Comprobante PDF** descargable tras pago exitoso (DomPDF)
 - **Notificación por email HTML** con diseño profesional compatible con Gmail, Outlook y Apple Mail
@@ -62,6 +63,25 @@ El operador genera el botón desde el panel, el cliente paga desde su dispositiv
 ---
 
 ## Historial de versiones
+
+### v2.2 — Correcciones y robustez (2026)
+
+**Integridad de pagos**
+- **Número de documento único**: índice UNIQUE en `boton_pagos.documento` + validación al generar. Un documento ya pagado o con botón activo no se puede volver a generar; si estaba rechazado, se reutiliza la misma fila (reintento) en lugar de duplicar.
+- **Fix confirmación de pago**: se reemplazó un destructuring incorrecto de `firstOrCreate()` (devolvía `null`) por `wasRecentlyCreated`. Antes, al confirmar un pago no se guardaba la confirmación, no se marcaba el botón como pagado ni se enviaba el correo.
+- **Fix `actualizarToken`**: ahora refresca también `url_wp`, evitando el desajuste token/URL entre ambientes que dejaba la página de Webpay en blanco.
+
+**Transbank en producción**
+- `AppServiceProvider` ahora **falla con error claro** si `TRANSBANK_ENVIRONMENT=production` pero faltan credenciales, en vez de caer en silencio a las de prueba. Hace `trim()` a los valores para tolerar espacios al pegar en `.env`.
+
+**Logo y PDF (independientes del hosting)**
+- **Logo servido por ruta** (`GET /logo`) en vez de depender del symlink `public/storage` — funciona aunque el hosting tenga el `public` en otra ruta o no permita enlaces simbólicos.
+- **Comprobante PDF**: logos incrustados en base64 desde archivos locales (DomPDF no resuelve URLs); logo principal tomado del logo configurable de la app; imagen de footer opcional (`public/imgs/comprobante-footer.png`); logos y footer centrados.
+
+**Limpieza**
+- Buscadores en vivo corregidos a la sintaxis de Livewire 3 (`wire:model.live.debounce`); antes no filtraban.
+- Eliminada la card KPI y la página/menú de **Rechazados** (el estado `rechazado` se conserva internamente para bloquear reintentos).
+- Eliminado `postcss.config.js` obsoleto (sobrante de Tailwind v3) que rompía `vite build` bajo `"type": "module"`.
 
 ### v2.1 — Mejoras continuas (2026)
 
@@ -172,7 +192,8 @@ MAIL_FROM_NAME="BtnPago"
 # 8. Ejecutar migraciones y seeder
 php artisan migrate --seed
 
-# 9. Enlace de storage (logos y configuración)
+# 9. Enlace de storage (opcional: el logo se sirve por la ruta /logo,
+#    así que no es imprescindible para mostrarlo)
 php artisan storage:link
 
 # 10. Compilar assets
@@ -222,7 +243,6 @@ app/
 │   ├── Dashboard.php             # KPIs y actividad en tiempo real
 │   ├── BtnActivos.php            # Listado de botones activos con búsqueda
 │   ├── ListadoPagado.php         # Listado de pagos completados
-│   ├── ListadoRechazo.php        # Listado de pagos rechazados
 │   ├── Counter.php               # Formulario de generación de botón
 │   └── Settings.php              # Panel de configuración (logo + correo)
 ├── Models/
@@ -231,7 +251,7 @@ app/
 ├── Mail/PagoRealizado.php        # Email HTML de notificación de pago
 ├── Services/AppSettings.php      # Lectura/escritura de settings.json (logo, correo)
 ├── Providers/AppServiceProvider  # Configuración de Transbank al arrancar
-└── helpers.php                   # chilePesos(), appLogo()
+└── helpers.php                   # chilePesos(), appLogo(), appLogoPath(), pdfImage()
 
 config/
 └── transbank.php                 # Lee TRANSBANK_* desde .env
@@ -265,8 +285,8 @@ Transbank responde a /respuestaPago
 │  - Redirect PRG → GET /comprobante/{doc} (idempotente)                        │
 └───────────────────────────────────────────────────────────────────────────────┘
 ┌─── Rechazado / Cancelado ─────────────────────────────────────────────────────┐
-│  - boton_pagos → estado: rechazado                                            │
-│  - Listado "Rechazados" (sin comprobante PDF si no hubo confirmación)         │
+│  - boton_pagos → estado: rechazado (bloquea reintentos sobre el mismo botón)  │
+│  - El generador puede reactivar un documento rechazado para reintentar         │
 └───────────────────────────────────────────────────────────────────────────────┘
 ```
 

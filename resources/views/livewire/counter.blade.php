@@ -32,6 +32,9 @@
                                             placeholder="123456" id="documento"
                                             class="block w-full flex-1 rounded-none rounded-r-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                     </div>
+                                    @error('documento')
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
                                 </div>
 
                                 <!-- Se comenta para agregar más campos si necesitan más datos
@@ -45,6 +48,9 @@
                                     <input wire:model="monto" type="text" required="" name="monto"
                                         id="monto" placeholder="$12.345"
                                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                    @error('monto')
+                                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                    @enderror
                                 </div>
 
                             </div>

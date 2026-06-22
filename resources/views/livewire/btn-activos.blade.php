@@ -11,7 +11,7 @@
     {{-- Buscador --}}
     <div class="px-4 py-3 bg-gray-50 border-b border-gray-200">
         <input
-            wire:model.debounce.400ms="search"
+            wire:model.live.debounce.400ms="search"
             type="text"
             placeholder="Buscar por N° documento..."
             class="block w-full sm:w-72 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"

@@ -106,7 +106,7 @@ class BotonPagoController extends Controller
         $cardDetail = $response->getCardDetail();
         $ultimosDigitos = is_array($cardDetail) ? array_values($cardDetail)[0] ?? '' : '';
 
-        [$pagoRealizado, $esNuevo] = ConfirmacionPagos::firstOrCreate(
+        $pagoRealizado = ConfirmacionPagos::firstOrCreate(
             ['orderPayment' => $response->getBuyOrder()],
             [
                 'authPayment'            => self::VCI_LABELS[$vci] ?? $vci,
@@ -125,7 +125,9 @@ class BotonPagoController extends Controller
             ]
         );
 
-        if ($esNuevo) {
+        // wasRecentlyCreated: true solo si firstOrCreate insertó el registro ahora.
+        // Evita re-marcar el botón / reenviar el correo si Transbank reintenta el commit.
+        if ($pagoRealizado->wasRecentlyCreated) {
             BotonPago::where('documento', $response->getBuyOrder())
                 ->update(['estado' => BotonPago::ESTADO_PAGADO]);
 
@@ -150,6 +152,7 @@ class BotonPagoController extends Controller
 
         $response = (new Transaction)->create($documento, $documento, $monto, $url);
         $datos->token_ws = $response->getToken();
+        $datos->url_wp   = $response->getUrl(); // refrescar la URL: token y URL deben ser del mismo ambiente
         $datos->save();
 
         session()->flash('message', 'Se ha actualizado correctamente');

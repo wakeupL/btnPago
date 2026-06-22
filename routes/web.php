@@ -16,9 +16,6 @@ Route::get('/dashboard', function () {
 Route::get('/btn-activos', function () {
     return view('btn-activos');
 })->middleware(['auth', 'verified'])->name('btn-activos');
-Route::get('/listado-rechazo', function () {
-    return view('listado-rechazo');
-})->middleware(['auth', 'verified'])->name('listado-rechazo');
 Route::get('/btn-pagados', function () {
     return view('listado-pagados');
 })->middleware(['auth', 'verified'])->name('btn-pagados');
@@ -39,6 +36,13 @@ Route::get('/comprobante/{documento}', [BotonPagoController::class,'comprobante'
 Route::post('/actualizarToken', [BotonPagoController::class,'actualizarToken'])->name('actualizarToken');
 Route::get('/error', [BotonPagoController::class, 'error'])->name('error');
 Route::get('/url', [BotonPagoController::class,'urlCorta'])->name('urlCorta');
+Route::get('/logo', function () {
+    $path = storage_path('app/public/logo/logo.png');
+    abort_unless(file_exists($path), 404);
+
+    // Entrega el logo a través de PHP: evita depender del symlink public/storage.
+    return response()->file($path, ['Cache-Control' => 'public, max-age=86400']);
+})->name('logo');
 Route::post('/descargarComprobante', [BotonPagoController::class, 'descargarComprobante'])->name('descargar');
 
 require __DIR__.'/auth.php';

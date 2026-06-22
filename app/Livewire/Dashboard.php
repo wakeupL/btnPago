@@ -17,7 +17,6 @@ class Dashboard extends Component
 
         $totalActivos    = BotonPago::activos()->count();
         $totalPagados    = BotonPago::pagados()->count();
-        $totalRechazados = BotonPago::rechazados()->count();
 
         $montoRecaudado = ConfirmacionPagos::where('created_at', '>=', $desde)
             ->sum('amountPayment');
@@ -42,7 +41,6 @@ class Dashboard extends Component
         return view('livewire.dashboard', compact(
             'totalActivos',
             'totalPagados',
-            'totalRechazados',
             'montoRecaudado',
             'pagadosPeriodo',
             'ultimosPagos',

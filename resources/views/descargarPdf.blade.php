@@ -5,7 +5,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Curita | Comprobante de pago</title>
+    <title>CBM | Comprobante de pago</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ" crossorigin="anonymous">
 
@@ -27,9 +27,13 @@
         .text-right {
             text-align: right;
         }
+        .text-center {
+            text-align: center;
+        }
         .logo {
             padding: 15px;
             border-bottom: 1px solid #9d9d9d;
+            text-align: center;
         }
         .titulo {
             text-align: center;
@@ -59,11 +63,12 @@
 </head>
 
 <body>
-    @foreach ($buscarComprobante as $pago)
-    @endforeach
     <div class="container">
         <div class="logo text-center">
-            <img src="https://i.imgur.com/fn1ZgF7.png" alt="" width="175">
+            @php $logoPrincipal = pdfImage(appLogoPath()); @endphp
+            @if ($logoPrincipal)
+                <img src="{{ $logoPrincipal }}" alt="Logo" width="175">
+            @endif
         </div>
         <div class="titulo">
             Comprobante de Pago <br>
@@ -97,19 +102,22 @@
                     <td class="">Fecha y Hora</td>
                     <td class="text-right">{{ $buscarComprobante->updated_at }}</td>
                 </tr>
+                @php $logoFooter = pdfImage(public_path('imgs/comprobante-footer.png')); @endphp
+                @if ($logoFooter)
                 <tr>
                     <td class="img-footer text-center" style="padding-top:50px;" colspan="2">
-                        <img src="https://i.imgur.com/fn1ZgF7.png" alt="" width="100">
+                        <img src="{{ $logoFooter }}" alt="" width="100">
                     </td>
                 </tr>
+                @endif
                 <tr>
                     <td colspan="2" class="sin-border text-center footer">
                         <p>
-                            Casa Matriz : Direccion numero 1<br>
-                            Sucursal Zona Sur: Direccion numero 2<br>
-                            +562 2 132 9874<br>
-                            correo@correo.cl<br>
-                            www.web.cl
+                            Casa Matriz : Cuarta Avenida #1130, San Miguel, Santiago.<br>
+                            Sucursal Zona Sur: Maipú #1071, Concecpción.<br>
+                            +56 2 2553 3499 <br>
+                            cobranza@cbm.cl<br>
+                            www.cbm.cl
                         </p>
                     </td>
                 </tr>

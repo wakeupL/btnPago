@@ -1,6 +1,6 @@
 @if (empty($_GET['m'] && $_GET['d'] && $_GET['t'] && $_GET['u']))
     @php
-        $nuevaURL = 'https://www.google.cl';
+        $nuevaURL = 'https://www.cbm.cl';
         header('Location: ' . $nuevaURL);
         die();
     @endphp
