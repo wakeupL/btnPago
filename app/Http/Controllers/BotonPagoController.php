@@ -164,7 +164,12 @@ class BotonPagoController extends Controller
 
     public function descargarComprobante(Request $request)
     {
-        $buscarComprobante = ConfirmacionPagos::where('orderPayment', $request->documento)->firstOrFail();
+        $buscarComprobante = ConfirmacionPagos::where('orderPayment', $request->documento)->first();
+
+        if (! $buscarComprobante) {
+            abort(404, 'No existe comprobante para este pago. Los pagos rechazados o anulados sin confirmación no generan comprobante.');
+        }
+
         $pdf = Pdf::loadView('descargarPdf', compact('buscarComprobante'));
         return $pdf->stream();
     }

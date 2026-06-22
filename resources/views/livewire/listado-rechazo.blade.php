@@ -56,13 +56,17 @@
                         </span>
                     </td>
                     <td class="px-6 py-4 text-center">
-                        <form method="POST" target="_blank" action="{{ route('descargar') }}">
-                            @csrf
-                            <input type="hidden" name="documento" value="{{ $pago->documento }}">
-                            <button type="submit" title="Descargar PDF">
-                                <img src="{{ asset('imgs/icons8-pdf-30.png') }}" class="w-7 h-7 mx-auto" />
-                            </button>
-                        </form>
+                        @if ($pago->confirmacion)
+                            <form method="POST" target="_blank" action="{{ route('descargar') }}">
+                                @csrf
+                                <input type="hidden" name="documento" value="{{ $pago->documento }}">
+                                <button type="submit" title="Descargar comprobante PDF">
+                                    <img src="{{ asset('imgs/icons8-pdf-30.png') }}" class="w-7 h-7 mx-auto" />
+                                </button>
+                            </form>
+                        @else
+                            <span class="text-xs text-gray-400 italic">Sin comprobante</span>
+                        @endif
                     </td>
                 </tr>
             @empty

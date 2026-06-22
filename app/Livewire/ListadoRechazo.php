@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Livewire;
+namespace App\Livewire;
 
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -22,7 +22,7 @@ class ListadoRechazo extends Component
     public function render()
     {
         $btnPagos = BotonPago::rechazados()
-            ->with('user')
+            ->with(['user', 'confirmacion'])
             ->when($this->search, fn($q) => $q->where('documento', 'like', '%' . $this->search . '%'))
             ->orderBy('updated_at', 'desc')
             ->paginate(10);

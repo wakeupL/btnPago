@@ -69,9 +69,6 @@
                             @endif
                         </div>
                     </form>
-                    <p class="text-center text-gray-500 text-xs">
-                        &copy;2023 Desarrollado por Ángel Oyarzún. <br><b>Sistema se encuentra en fase beta.</b>
-                    </p>
                 </div>
             </div>
 

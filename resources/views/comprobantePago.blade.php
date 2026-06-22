@@ -74,9 +74,6 @@
                         </tr>
                     </table>
 
-                    <p class="text-center text-gray-500 text-xs pt-6 mt-6">
-                        &copy;2023 Desarrollado por Ángel Oyarzún.
-                    </p>
                 </div>
             </div>
 

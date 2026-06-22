@@ -22,6 +22,9 @@ Route::get('/listado-rechazo', function () {
 Route::get('/btn-pagados', function () {
     return view('listado-pagados');
 })->middleware(['auth', 'verified'])->name('btn-pagados');
+Route::get('/settings', function () {
+    return view('settings');
+})->middleware(['auth', 'verified'])->name('settings');
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

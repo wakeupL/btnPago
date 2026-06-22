@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Livewire;
+namespace App\Livewire;
 
 use Livewire\Component;
 use Transbank\Webpay\WebpayPlus\Transaction;
@@ -11,13 +11,11 @@ class Counter extends Component
 {
     use WithPagination;
 
+    public $monto, $documento, $respuesta, $url, $token_ws;
 
-    public $monto, $documento, $respuesta,$url,$token_ws;
-
-    public function generarBtn(){
-
+    public function generarBtn(): void
+    {
         $url = route('respuestaPago');
-
 
         $response = (new Transaction)->create($this->documento, $this->documento, $this->monto, $url);
 
@@ -34,8 +32,9 @@ class Counter extends Component
         $nuevoBtn->corta_token = $corta_token;
         $nuevoBtn->estado      = BotonPago::ESTADO_ACTIVO;
         $nuevoBtn->save();
+
         session()->flash('message', 'Se ha generado nuevo botón de pago.');
-        return redirect()->route('dashboard');
+        $this->redirect(route('dashboard'));
     }
 
     public function render()

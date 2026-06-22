@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Livewire;
+namespace App\Livewire;
 
 use App\Models\BotonPago;
 use App\Models\ConfirmacionPagos;
@@ -19,10 +19,10 @@ class Dashboard extends Component
         $totalPagados    = BotonPago::pagados()->count();
         $totalRechazados = BotonPago::rechazados()->count();
 
-        $montoRecaudado  = ConfirmacionPagos::where('created_at', '>=', $desde)
+        $montoRecaudado = ConfirmacionPagos::where('created_at', '>=', $desde)
             ->sum('amountPayment');
 
-        $pagadosPeriodo  = BotonPago::pagados()
+        $pagadosPeriodo = BotonPago::pagados()
             ->where('updated_at', '>=', $desde)
             ->count();
 
@@ -32,8 +32,8 @@ class Dashboard extends Component
             ->get();
 
         $actividadDiaria = ConfirmacionPagos::selectRaw(
-                "date(created_at) as fecha, count(*) as total, sum(amountPayment) as monto"
-            )
+            "date(created_at) as fecha, count(*) as total, sum(amountPayment) as monto"
+        )
             ->where('created_at', '>=', $desde)
             ->groupBy('fecha')
             ->orderBy('fecha')
