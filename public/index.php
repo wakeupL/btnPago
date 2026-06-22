@@ -1,5 +1,8 @@
 <?php
 
+// Suprimir E_DEPRECATED de vendor/PHP 8.4 antes del autoload (pest, etc.)
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED);
+
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Http\Request;
 

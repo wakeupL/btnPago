@@ -5,17 +5,28 @@ namespace App\Http\Livewire;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\BotonPago;
-use App\Models\User;
 
 class ListadoPagado extends Component
 {
     use WithPagination;
 
+    public string $search = '';
+
+    protected $queryString = ['search' => ['except' => '']];
+
+    public function updatingSearch(): void
+    {
+        $this->resetPage();
+    }
+
     public function render()
     {
-        return view('livewire.listado-pagado',[
-            'btnPagos' => BotonPago::orderBy('updated_at', 'asc')->paginate(10),
-            'users' => User::get(),
-        ]);
+        $btnPagos = BotonPago::pagados()
+            ->with('user')
+            ->when($this->search, fn($q) => $q->where('documento', 'like', '%' . $this->search . '%'))
+            ->orderBy('updated_at', 'desc')
+            ->paginate(10);
+
+        return view('livewire.listado-pagado', compact('btnPagos'));
     }
 }
