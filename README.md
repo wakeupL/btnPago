@@ -23,22 +23,24 @@
 
 **BtnPago** es una herramienta de administración que permite generar y gestionar botones de pago WebpayPlus (Transbank) de forma centralizada. Nació como solución interna para una empresa de comercialización de materiales eléctricos, donde los clientes necesitaban pagar facturas, guías de despacho o adelantar cheques de forma digital.
 
-El operador genera el botón desde el panel, el cliente paga desde su dispositivo a través de WebpayPlus, y el sistema registra automáticamente el resultado, envía un comprobante por email y genera un PDF descargable.
+El operador genera el botón desde el panel, el cliente paga desde su dispositivo a través de WebpayPlus, y el sistema registra automáticamente el resultado, envía una notificación por email y genera un comprobante PDF descargable.
 
 ---
 
 ## Características
 
 - **Generación de botones de pago** con monto y número de documento
-- **URL corta única** para compartir el link de pago al cliente (8 caracteres, token anti-colisión con índice UNIQUE en BD)
+- **URL corta única** para compartir con el cliente (8 caracteres, índice UNIQUE en BD, protegida contra reutilización)
 - **Dashboard con KPIs** en tiempo real: activos, pagados, rechazados, monto recaudado, actividad diaria
 - **Listados con búsqueda en vivo** (Livewire): botones activos, pagados y rechazados
+- **Comprobante de pago** rediseñado con soporte dark mode completo
 - **Comprobante PDF** descargable tras pago exitoso (DomPDF)
-- **Notificación por email** automática al completar un pago
-- **Panel de configuración**: cambio de logo de la aplicación sin tocar código
-- **Credenciales Transbank por `.env`**: integración/producción sin recompilar
+- **Notificación por email HTML** con diseño profesional compatible con Gmail, Outlook y Apple Mail
+- **Panel de configuración**: logo dinámico + correo responsable de notificaciones
+- **Credenciales Transbank por `.env`**: integración/producción configurable sin tocar código
 - **Regeneración de botón**: renueva el token WebpayPlus sin perder el registro
 - **Soporte SQLite y MySQL**
+- **Protección contra pagos duplicados**: patrón PRG + `firstOrCreate` a nivel de BD
 
 ---
 
@@ -61,9 +63,29 @@ El operador genera el botón desde el panel, el cliente paga desde su dispositiv
 
 ## Historial de versiones
 
-### v2.0 — Actualización mayor (2026)
+### v2.1 — Mejoras continuas (2026)
 
-Migración completa del stack y mejoras de arquitectura:
+**Email y notificaciones**
+- Plantilla de email rediseñada en HTML/CSS inline — compatible con todos los clientes de correo (Gmail, Outlook, Apple Mail)
+- Correo de notificaciones configurable desde el panel de ajustes (ya no requiere editar `.env`)
+- Soporte para Gmail SMTP y Resend como proveedores de correo
+- Servicio `AppSettings` para persistir configuraciones de la app en `storage/app/settings.json`
+
+**Seguridad y consistencia de datos**
+- **Prevención de pagos duplicados**: patrón PRG (Post-Redirect-Get) — la página de éxito es ahora una ruta GET independiente `/comprobante/{documento}`, idempotente ante recargas
+- **`firstOrCreate` en `ConfirmacionPagos`**: escudo a nivel de BD que impide crear registros duplicados aunque Transbank permita múltiples commits del mismo token en integración
+- Email y cambio de estado solo se ejecutan cuando el registro es genuinamente nuevo (`$esNuevo`)
+- **URL corta protegida**: `urlCorta()` verifica el estado del botón antes de redirigir; botones pagados o rechazados muestran mensaje de error en lugar de permitir un segundo pago
+
+**UI y experiencia**
+- Comprobante de pago rediseñado: cabecera verde con ✓ SVG, monto destacado, tabla espaciada con `divide-y`, tarjeta enmascarada con `••••`, fecha formateada con Carbon
+- Soporte dark mode completo en el comprobante con variantes `dark:` en todos los elementos
+- Fix: eliminada redeclaración de `chilePesos()` en vistas Blade (`comprobantePago`, `descargarPdf`) que causaba `FatalError` en PHP 8.4
+- Fix: botón PDF solo visible en rechazados cuando existe `ConfirmacionPagos` (evita 404)
+- Footer "Desarrollado con ♥ por wakedev.cl" en todos los layouts con posición sticky (flex column)
+- Créditos anteriores eliminados de todas las vistas públicas
+
+### v2.0 — Actualización mayor de stack (2026)
 
 **Stack actualizado**
 - Laravel 9 → **12** (nueva estructura: `bootstrap/app.php` fluente, `bootstrap/providers.php`, eliminados Kernels legacy)
@@ -75,20 +97,17 @@ Migración completa del stack y mejoras de arquitectura:
 
 **Mejoras de código**
 - Modelos con `$fillable`, `$casts`, constantes de estado y scopes Eloquent (`activos()`, `pagados()`, `rechazados()`)
-- Consultas SQL optimizadas: filtrado por scope en BD en lugar de Blade, eager loading `with(['user', 'confirmacion'])`
-- Helper global `chilePesos()` para formateo de montos en CLP (evita redeclaración en Blade)
+- Consultas SQL optimizadas: filtrado por scope en BD, eager loading `with(['user', 'confirmacion'])`
+- Helper global `chilePesos()` centralizado en `app/helpers.php`
 - Helper `appLogo()` con fallback al logo por defecto
+- Credenciales Transbank movidas a `.env` con `config/transbank.php`
 
 **Nuevas funcionalidades**
-- Dashboard real con Livewire (antes era estático): KPIs, últimos pagos, actividad diaria, selector de período
-- Credenciales Transbank movidas a `.env` con `config/transbank.php` — configurable sin tocar código
+- Dashboard real con Livewire: KPIs, últimos pagos, actividad diaria, selector de período
 - Panel de Configuración: upload dinámico de logo (PNG/JPG/SVG/WebP, máx. 2 MB)
-- Índice UNIQUE en `boton_pagos.corta_token` — garantiza tokens únicos a nivel de BD
-- Buscador en vivo en todos los listados (Livewire)
-- Página "Rechazados" con lógica correcta: `estado=2` asignado en todos los flujos de rechazo
-- Fix: comprobante PDF solo disponible cuando existe `ConfirmacionPagos` — evita 404 en rechazados
-- Footer global "Desarrollado con ♥ por wakedev.cl" en todos los layouts (sticky flex)
-- Soporte de `storage:link` para assets públicos
+- Índice UNIQUE en `boton_pagos.corta_token`
+- Buscador en vivo en todos los listados
+- Página "Rechazados" con lógica de estado correcta
 
 ### v1.0 — Versión inicial (2023)
 
@@ -122,12 +141,11 @@ npm install
 cp .env.example .env
 php artisan key:generate
 
-# 5. Configurar base de datos en .env
-# Para SQLite (más simple):
+# 5. Base de datos en .env
+# SQLite (recomendado para empezar):
 DB_CONNECTION=sqlite
-# El archivo se crea automáticamente
 
-# Para MySQL:
+# MySQL:
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
@@ -135,41 +153,61 @@ DB_DATABASE=btn_pago
 DB_USERNAME=root
 DB_PASSWORD=
 
-# 6. Configurar Transbank en .env
+# 6. Transbank en .env
 TRANSBANK_ENVIRONMENT=integration   # "integration" o "production"
-TRANSBANK_COMMERCE_CODE=            # vacío = usa credenciales de prueba de Transbank
-TRANSBANK_API_KEY=                  # vacío = usa credenciales de prueba de Transbank
+TRANSBANK_COMMERCE_CODE=            # vacío = credenciales de prueba de Transbank
+TRANSBANK_API_KEY=                  # vacío = credenciales de prueba de Transbank
 
-# 7. Ejecutar migraciones y seeder
+# 7. Correo en .env (elegir uno)
+# Gmail:
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=tu-correo@gmail.com
+MAIL_PASSWORD="contraseña de aplicación de 16 caracteres"
+MAIL_ENCRYPTION=tls
+MAIL_FROM_ADDRESS="tu-correo@gmail.com"
+MAIL_FROM_NAME="BtnPago"
+
+# 8. Ejecutar migraciones y seeder
 php artisan migrate --seed
 
-# 8. Crear enlace de storage (para logos)
+# 9. Enlace de storage (logos y configuración)
 php artisan storage:link
 
-# 9. Compilar assets
+# 10. Compilar assets
 npm run build
 
-# 10. Iniciar servidor
+# 11. Iniciar servidor
 php artisan serve
 ```
-
-Acceder a `http://localhost:8000` con las credenciales del seeder.
 
 ---
 
 ## Configuración de Transbank
 
-El sistema soporta tres modos sin cambiar código:
-
 | Escenario | `.env` |
 |---|---|
-| Pruebas con credenciales públicas de Transbank | `TRANSBANK_ENVIRONMENT=integration` y dejar `COMMERCE_CODE` / `API_KEY` vacíos |
+| Pruebas con credenciales públicas | `TRANSBANK_ENVIRONMENT=integration` — dejar `COMMERCE_CODE` y `API_KEY` vacíos |
 | Certificación con credenciales propias | `TRANSBANK_ENVIRONMENT=integration` + tus credenciales |
 | Producción | `TRANSBANK_ENVIRONMENT=production` + credenciales reales del comercio |
 
-Las credenciales públicas de integración de Transbank son:
+Credenciales públicas de integración de Transbank:
 - Commerce Code: `597055555532`
 - API Key: `579B532A7440BB0C9079DED94D31EA1615BACEB56610332264630D42D0A36B1C`
+
+---
+
+## Configuración de correo
+
+El correo responsable de notificaciones se configura desde **Panel → Configuración → Notificaciones**, sin editar el `.env`.
+
+Para el envío real se recomienda una de estas opciones:
+
+| Proveedor | Ventaja | Configuración |
+|---|---|---|
+| Gmail SMTP | Sin registro adicional | `MAIL_HOST=smtp.gmail.com` + contraseña de aplicación |
+| [Resend](https://resend.com) | 3.000 correos/mes gratis, ideal para producción | `MAIL_MAILER=resend` + `RESEND_KEY=re_xxx` |
 
 ---
 
@@ -178,7 +216,7 @@ Las credenciales públicas de integración de Transbank son:
 ```
 app/
 ├── Http/Controllers/
-│   ├── BotonPagoController.php   # Lógica principal de pagos y respuestas WebpayPlus
+│   ├── BotonPagoController.php   # Lógica de pagos, respuesta Transbank, comprobante, URL corta
 │   └── Auth/                     # Controladores de autenticación (Breeze)
 ├── Livewire/
 │   ├── Dashboard.php             # KPIs y actividad en tiempo real
@@ -186,11 +224,12 @@ app/
 │   ├── ListadoPagado.php         # Listado de pagos completados
 │   ├── ListadoRechazo.php        # Listado de pagos rechazados
 │   ├── Counter.php               # Formulario de generación de botón
-│   └── Settings.php              # Panel de configuración (logo)
+│   └── Settings.php              # Panel de configuración (logo + correo)
 ├── Models/
 │   ├── BotonPago.php             # Scopes activos/pagados/rechazados, generarCortaToken()
 │   └── ConfirmacionPagos.php     # Registro de confirmaciones exitosas de Transbank
-├── Mail/PagoRealizado.php        # Email de notificación de pago
+├── Mail/PagoRealizado.php        # Email HTML de notificación de pago
+├── Services/AppSettings.php      # Lectura/escritura de settings.json (logo, correo)
 ├── Providers/AppServiceProvider  # Configuración de Transbank al arrancar
 └── helpers.php                   # chilePesos(), appLogo()
 
@@ -199,10 +238,11 @@ config/
 
 resources/views/
 ├── layouts/
-│   ├── app.blade.php             # Layout autenticado (sticky footer)
-│   └── guest.blade.php          # Layout público (sticky footer)
+│   ├── app.blade.php             # Layout autenticado (sticky footer flex)
+│   └── guest.blade.php           # Layout público (sticky footer flex)
 ├── livewire/                     # Vistas de componentes Livewire
-└── emails/                       # Templates de email (Markdown)
+├── emails/pago-realizado.blade.php  # Template HTML/CSS inline del correo
+└── comprobantePago.blade.php     # Comprobante web con dark mode
 ```
 
 ---
@@ -210,29 +250,25 @@ resources/views/
 ## Flujo de pago
 
 ```
-Operador genera botón  →  Sistema crea registro en boton_pagos (estado: activo)
+Operador genera botón  →  boton_pagos (estado: activo) + URL corta única
        ↓
-URL corta enviada al cliente  →  Cliente accede y es redirigido a WebpayPlus
+Cliente accede a URL corta  →  Sistema verifica estado (solo activo pasa)
        ↓
-Transbank procesa el pago
+Redirige a WebpayPlus  →  Cliente completa el pago
+       ↓
+Transbank responde a /respuestaPago
        ↓
 ┌─── Aprobado ──────────────────────────────────────────────────────────────────┐
-│  - Crea ConfirmacionPagos con detalles de la transacción                      │
-│  - Actualiza boton_pagos → estado: pagado                                     │
-│  - Envía email de notificación                                                │
-│  - Muestra comprobante en pantalla + PDF descargable                          │
+│  - firstOrCreate en ConfirmacionPagos (evita duplicados ante recargas)        │
+│  - boton_pagos → estado: pagado                                               │
+│  - Envía email HTML al correo configurado en panel                            │
+│  - Redirect PRG → GET /comprobante/{doc} (idempotente)                        │
 └───────────────────────────────────────────────────────────────────────────────┘
-┌─── Rechazado / Anulado ───────────────────────────────────────────────────────┐
-│  - Actualiza boton_pagos → estado: rechazado                                  │
-│  - Aparece en listado "Rechazados" (sin comprobante PDF)                      │
+┌─── Rechazado / Cancelado ─────────────────────────────────────────────────────┐
+│  - boton_pagos → estado: rechazado                                            │
+│  - Listado "Rechazados" (sin comprobante PDF si no hubo confirmación)         │
 └───────────────────────────────────────────────────────────────────────────────┘
 ```
-
----
-
-## Capturas de pantalla
-
-> _Próximamente_
 
 ---
 
