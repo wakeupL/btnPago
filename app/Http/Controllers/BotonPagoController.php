@@ -106,35 +106,38 @@ class BotonPagoController extends Controller
         $cardDetail = $response->getCardDetail();
         $ultimosDigitos = is_array($cardDetail) ? array_values($cardDetail)[0] ?? '' : '';
 
-        $pagoRealizado = ConfirmacionPagos::create([
-            'authPayment'            => self::VCI_LABELS[$vci] ?? $vci,
-            'responseCode'           => self::RESPONSE_CODES[$responseCode] ?? $responseCode,
-            'statusPayment'          => $response->getStatus(),
-            'amountPayment'          => $response->getAmount(),
-            'authorizationCode'      => $response->getAuthorizationCode(),
-            'typePayment'            => $tipoLabel,
-            'accountingDate'         => $response->getAccountingDate(),
-            'sessionIdPayment'       => $response->getSessionId(),
-            'orderPayment'           => $response->getBuyOrder(),
-            'cardNumberPayment'      => $ultimosDigitos,
-            'transactionDatePayment' => $response->getTransactionDate(),
-            'installmentsAmount'     => $importeCuotas,
-            'installmentsNumber'     => $numeroCuotas,
-            'balance'                => $response->getBalance(),
-        ]);
+        [$pagoRealizado, $esNuevo] = ConfirmacionPagos::firstOrCreate(
+            ['orderPayment' => $response->getBuyOrder()],
+            [
+                'authPayment'            => self::VCI_LABELS[$vci] ?? $vci,
+                'responseCode'           => self::RESPONSE_CODES[$responseCode] ?? $responseCode,
+                'statusPayment'          => $response->getStatus(),
+                'amountPayment'          => $response->getAmount(),
+                'authorizationCode'      => $response->getAuthorizationCode(),
+                'typePayment'            => $tipoLabel,
+                'accountingDate'         => $response->getAccountingDate(),
+                'sessionIdPayment'       => $response->getSessionId(),
+                'cardNumberPayment'      => $ultimosDigitos,
+                'transactionDatePayment' => $response->getTransactionDate(),
+                'installmentsAmount'     => $importeCuotas,
+                'installmentsNumber'     => $numeroCuotas,
+                'balance'                => $response->getBalance(),
+            ]
+        );
 
-        BotonPago::where('documento', $response->getBuyOrder())
-            ->update(['estado' => BotonPago::ESTADO_PAGADO]);
+        if ($esNuevo) {
+            BotonPago::where('documento', $response->getBuyOrder())
+                ->update(['estado' => BotonPago::ESTADO_PAGADO]);
 
-        try {
-            $destinatario = AppSettings::get('correo_notificaciones', config('mail.from.address'));
-            Mail::to($destinatario)->send(new PagoRealizado($pagoRealizado));
-        } catch (\Throwable $e) {
-            logger()->error('Error enviando email de pago: ' . $e->getMessage());
+            try {
+                $destinatario = AppSettings::get('correo_notificaciones', config('mail.from.address'));
+                Mail::to($destinatario)->send(new PagoRealizado($pagoRealizado));
+            } catch (\Throwable $e) {
+                logger()->error('Error enviando email de pago: ' . $e->getMessage());
+            }
         }
 
-        $buscarComprobante = ConfirmacionPagos::where('orderPayment', $response->getBuyOrder())->first();
-        return view('comprobantePago', compact('buscarComprobante'));
+        return redirect()->route('comprobante', $response->getBuyOrder());
     }
 
     public function actualizarToken(Request $request)
@@ -158,10 +161,27 @@ class BotonPagoController extends Controller
         return view('error');
     }
 
+    public function comprobante(string $documento)
+    {
+        $buscarComprobante = ConfirmacionPagos::where('orderPayment', $documento)->firstOrFail();
+        return view('comprobantePago', compact('buscarComprobante'));
+    }
+
     public function urlCorta(Request $request)
     {
-        $url = DB::table('boton_pagos')->where('corta_token', $request->e)->firstOrFail();
-        return redirect()->route('pagar', 'd=' . $url->documento . '&m=' . $url->monto . '&t=' . $url->token_ws . '&u=' . $url->url_wp . '&e=' . $url->estado);
+        $btn = BotonPago::where('corta_token', $request->e)->firstOrFail();
+
+        if ($btn->estado === BotonPago::ESTADO_PAGADO) {
+            session()->flash('message', 'Este pago ya fue procesado anteriormente.');
+            return redirect()->route('error');
+        }
+
+        if ($btn->estado === BotonPago::ESTADO_RECHAZADO) {
+            session()->flash('message', 'Este botón de pago ha sido desactivado. Contacte al soporte.');
+            return redirect()->route('error');
+        }
+
+        return redirect()->route('pagar', 'd=' . $btn->documento . '&m=' . $btn->monto . '&t=' . $btn->token_ws . '&u=' . $btn->url_wp . '&e=' . $btn->estado);
     }
 
     public function descargarComprobante(Request $request)

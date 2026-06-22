@@ -35,6 +35,7 @@ Route::get('/pagar', function () {
     return view('pagar');
 })->name('pagar');
 Route::get('/respuestaPago', [BotonPagoController::class,'respuestaPago'])->name('respuestaPago');
+Route::get('/comprobante/{documento}', [BotonPagoController::class,'comprobante'])->name('comprobante');
 Route::post('/actualizarToken', [BotonPagoController::class,'actualizarToken'])->name('actualizarToken');
 Route::get('/error', [BotonPagoController::class, 'error'])->name('error');
 Route::get('/url', [BotonPagoController::class,'urlCorta'])->name('urlCorta');
