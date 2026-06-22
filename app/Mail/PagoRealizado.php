@@ -25,7 +25,7 @@ class PagoRealizado extends Mailable
     public function content(): Content
     {
         return new Content(
-            markdown: 'emails.pago-realizado',
+            view: 'emails.pago-realizado',
         );
     }
 
