@@ -1,76 +1,80 @@
 <x-guest-layout>
+    <div class="w-full">
 
-    <div class="max-w-7xl">
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-            <div x-data="{ showMessage: true }" x-show="showMessage" x-init="setTimeout(() => showMessage = false, 7000)">
-                @if (session()->has('message'))
-                    <div class="p-3 text-green-700 bg-green-200 rounded text-center">
-                        {{ session('message') }}
-                    </div>
-                @endif
+        {{-- Cabecera de éxito --}}
+        <div class="bg-green-500 rounded-t-lg px-6 py-5 text-center">
+            <div class="inline-flex items-center justify-center w-12 h-12 bg-white rounded-full mb-3">
+                <svg class="w-7 h-7 text-green-500" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                </svg>
             </div>
-            <div class="p-6 bg-white">
-                <h2
-                    class="mb-4 text-center text-2xl font-extrabold tracking-dark leading-none text-gray-900 md:text-5xl lg:text-4xl dark:text-dark">
-                    ¡Pago realizado con éxito!</h2>
-                <div class="container mx-auto mt-2">
-                    <table class="flex-auto">
-                        @foreach ($buscarComprobante as $pago)
-                            @php
-                                //dd($buscarComprobante)
-                            @endphp
-                        @endforeach
-                        <tr>
-                            <th class="border">Estado de la operación</th>
-                            <td class="text-center border">{{ $buscarComprobante->responseCode }}</td>
-                        </tr>
-                        <tr>
-                            <th class="border">Código de autorización</th>
-                            <td class="text-center border">{{ $buscarComprobante->authorizationCode }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <th class="border">Tipo de pago</th>
-                            <td class="text-center border">{{ $buscarComprobante->typePayment }}</td>
-                        </tr>
-                        <tr>
-                            <th class="border">Últimos dígitos de la tarjeta</th>
-                            <td class="text-center border">...
-                                {{ $buscarComprobante->cardNumberPayment }}</td>
-                        </tr>
-                        <tr>
-                            <th class="border">Documento interno</th>
-                            <td class="text-center border">{{ $buscarComprobante->orderPayment }}</td>
-                        </tr>
-                        <tr>
-                            <th class="border">Monto pagado</th>
-                            <td class="text-center border">
-                                {{ chilePesos($buscarComprobante->amountPayment) }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <th class="border">Fecha y Hora</th>
-                            <td class="text-center border">{{ $buscarComprobante->updated_at }}</td>
-                        </tr>
-                        <tr>
-                            <th class="border">Descargar comprobante</th>
-                            <td class=" text-center border">
-
-                                <form method="POST" target="_blank" action="{{ route('descargar') }}">
-                                    @csrf
-                                    <input type="hidden" name="documento"
-                                        value="{{ $buscarComprobante->orderPayment }}">
-                                    <button type="submit"><img src="{{ asset('imgs/icons8-pdf-30.png') }}" /></button>
-                                </form>
-                            </td>
-                        </tr>
-                    </table>
-
-                </div>
-            </div>
-
+            <h2 class="text-white text-2xl font-bold tracking-tight">¡Pago realizado con éxito!</h2>
+            <p class="text-green-100 text-sm mt-1">Tu transacción fue procesada correctamente por WebpayPlus</p>
         </div>
 
-    </div>
+        {{-- Monto destacado --}}
+        <div class="bg-green-50 border-b border-green-100 px-6 py-5 text-center">
+            <p class="text-xs text-green-700 font-semibold uppercase tracking-widest mb-1">Monto pagado</p>
+            <p class="text-4xl font-extrabold text-green-700">{{ chilePesos($buscarComprobante->amountPayment) }}</p>
+        </div>
+
+        {{-- Tabla de detalles --}}
+        <div class="px-6 py-6">
+            <table class="w-full text-sm">
+                <tbody class="divide-y divide-gray-100">
+
+                    <tr>
+                        <td class="py-4 pr-4 text-gray-500 font-medium w-1/2">Estado</td>
+                        <td class="py-4 text-gray-900 font-semibold">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                {{ $buscarComprobante->responseCode }}
+                            </span>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="py-4 pr-4 text-gray-500 font-medium">Código de autorización</td>
+                        <td class="py-4 text-gray-900 font-mono font-semibold">{{ $buscarComprobante->authorizationCode }}</td>
+                    </tr>
+
+                    <tr>
+                        <td class="py-4 pr-4 text-gray-500 font-medium">Tipo de pago</td>
+                        <td class="py-4 text-gray-900">{{ $buscarComprobante->typePayment }}</td>
+                    </tr>
+
+                    <tr>
+                        <td class="py-4 pr-4 text-gray-500 font-medium">Tarjeta</td>
+                        <td class="py-4 text-gray-900 font-mono">•••• •••• •••• {{ $buscarComprobante->cardNumberPayment }}</td>
+                    </tr>
+
+                    <tr>
+                        <td class="py-4 pr-4 text-gray-500 font-medium">N° Documento</td>
+                        <td class="py-4 text-gray-900 font-semibold">{{ $buscarComprobante->orderPayment }}</td>
+                    </tr>
+
+                    <tr>
+                        <td class="py-4 pr-4 text-gray-500 font-medium">Fecha y hora</td>
+                        <td class="py-4 text-gray-900">
+                            {{ \Carbon\Carbon::parse($buscarComprobante->updated_at)->format('d/m/Y H:i') }} hrs
+                        </td>
+                    </tr>
+
+                </tbody>
+            </table>
+        </div>
+
+        {{-- Botón descarga PDF --}}
+        <div class="px-6 pb-6">
+            <form method="POST" target="_blank" action="{{ route('descargar') }}">
+                @csrf
+                <input type="hidden" name="documento" value="{{ $buscarComprobante->orderPayment }}">
+                <button type="submit"
+                    class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-800 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition">
+                    <img src="{{ asset('imgs/icons8-pdf-30.png') }}" class="w-5 h-5" alt="PDF">
+                    Descargar comprobante PDF
+                </button>
+            </form>
+        </div>
+
     </div>
 </x-guest-layout>
