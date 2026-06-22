@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Mail\PagoRealizado;
+use App\Services\AppSettings;
 use App\Models\BotonPago;
 use App\Models\ConfirmacionPagos;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -126,7 +127,8 @@ class BotonPagoController extends Controller
             ->update(['estado' => BotonPago::ESTADO_PAGADO]);
 
         try {
-            Mail::to(config('mail.from.address'))->send(new PagoRealizado($pagoRealizado));
+            $destinatario = AppSettings::get('correo_notificaciones', config('mail.from.address'));
+            Mail::to($destinatario)->send(new PagoRealizado($pagoRealizado));
         } catch (\Throwable $e) {
             logger()->error('Error enviando email de pago: ' . $e->getMessage());
         }
